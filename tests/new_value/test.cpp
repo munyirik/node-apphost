@@ -27,7 +27,11 @@ const char *contents =
     "process.fn = fnc;\n"
     "process.natives.sampleMethod('Hello ', fnc);";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("sampleMethod", sampleMethod);
   JS_StartEngine("/"); // defaults to main.js

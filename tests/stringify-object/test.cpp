@@ -23,7 +23,11 @@ void sampleMethod(JS_Value *params, int argc) {
 const char *contents =
     "process.natives.sampleMethod({a:1, b:'2', c:false, d:33.4, e:function(){} }, [1,2,3]);";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("sampleMethod", sampleMethod);
   JS_StartEngine("/"); // defaults to main.js

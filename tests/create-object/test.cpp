@@ -6,7 +6,11 @@
 #include "../commons/common-posix.h"
 #endif
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile("console.log('>>>', process.execPath)");
   JS_StartEngine("/"); // defaults to main.js
 

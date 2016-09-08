@@ -14,7 +14,8 @@ function print_help(exit_code) {
     {option: "--dest-cpu=[cpu_type]", text: "set target cpu (arm, ia32, x86, x64). i.e. --dest-cpu=ia32"},
     {option: "--file=[test name]", text: "Test only the given single test"},
     {option: "--mode=[build mode]", text: "Set Debug, or Release. Default `Debug`"},
-    {option: "--target=[target binary]", text: "Set jxcore, or nodejs. [Required]"}
+    {option: "--target=[target binary]", text: "Set jxcore, or nodejs. [Required]"},
+    {option: "--platform=[target]", text: "set target platform. by default 'desktop'. (android, desktop, ios, windows-uwp)"},
   ];
   for(var i in params) {
     var param = params[i];
@@ -24,6 +25,18 @@ function print_help(exit_code) {
   process.exit(exit_code);
 }
 
+var proj_folder = [];
+var proj_name = [];
+var sln_name = [];
+proj_folder['desktop'] = 'test_app'
+proj_folder['windows-uwp'] = 'test_app_uwp'
+proj_name['desktop'] = 'test_app.vcxproj'
+proj_name['windows-uwp'] = 'test_app_uwp.vcxproj'
+sln_name['desktop'] = 'test_app.sln'
+sln_name['windows-uwp'] = 'test_app_uwp.sln'
+
+var win_plat = (args.hasOwnProperty('--platform') ? args['--platform'] : 'desktop');
+	
 if (args.hasOwnProperty('--help')) {
   print_help(0);
 } else {
@@ -34,15 +47,15 @@ if (args.hasOwnProperty('--help')) {
   console.log('tip: try "--help" for other options');
 
   if (isWindows) {
-    // set target on vcxproj file
-    var proj_file = path.join(__dirname, "../winproj/test_app/test_app.vcxproj");
+	// set target on vcxproj file
+    var proj_file = path.join(__dirname, "../winproj/" + proj_folder[win_plat] + "/" + proj_name[win_plat]);
     var file = fs.readFileSync(proj_file) + "";
-    file = file.replace("$NODE_DISTRO$", (args['--target'] == 'jxcore' ? 'jx' : 'node'));
+	file = file.replace(/\$NODE_DISTRO\$/g, (args['--target'] == 'jxcore' ? 'jx' : 'node'));
     file = file.replace(/\$ARCH\$/g, getARCH());
     fs.writeFileSync(path.join(path.dirname(proj_file), "current.vcxproj"), file);
 
-    proj_file = path.join(__dirname, "../winproj/test_app/");
-    file = fs.readFileSync(proj_file + "test_app.sln") + "";
+    proj_file = path.join(__dirname, "../winproj/" + proj_folder[win_plat] +"/");
+    file = fs.readFileSync(proj_file + sln_name[win_plat]) + "";
     file = file.replace(/\$ARCH\$/g, getARCH());
     fs.writeFileSync(proj_file + "current.sln", file);
   }
@@ -81,17 +94,25 @@ function build() {
          + "exit $OUT\n"
          + "fi\n";
   } else {
-    return "cd " + root_folder + "\\winproj\\test_app\n"
-         + "copy ..\\..\\tests\\$$TARGET_TEST\\test.cpp .\n"
-         + "msbuild /m /nologo current.sln\n"
-         + "if %errorlevel% NEQ 0 exit 1\n"
-         + "copy *.dll Debug\\\n"
-         + "cd Debug\n"
-         + "echo *********** RUNNING $$TARGET_TEST *************"
-         + "\ncurrent.exe"
-         + "\nif %errorlevel% NEQ 0 ("
-         + "\nexit 1"
-         + "\n)\n";
+    if(win_plat != 'windows-uwp') {
+      return "cd " + root_folder + "\\winproj\\" + proj_folder[win_plat] + "\n"
+           + "copy ..\\..\\tests\\$$TARGET_TEST\\test.cpp .\n"
+           + "msbuild /m /nologo current.sln\n"
+           + "if %errorlevel% NEQ 0 exit 1\n"
+           + "copy *.dll Debug\\\n"
+           + "cd Debug\n"
+           + "echo *********** RUNNING $$TARGET_TEST *************"
+           + "\ncurrent.exe"
+           + "\nif %errorlevel% NEQ 0 ("
+           + "\nexit 1"
+           + "\n)\n";
+	} else {
+      // todo: run the test
+      return "cd " + root_folder + "\\winproj\\" + proj_folder[win_plat] + "\n"
+           + "copy ..\\..\\tests\\$$TARGET_TEST\\test.cpp .\n"
+           + "msbuild /m /nologo current.sln\n"
+           + "if %errorlevel% NEQ 0 exit 1\n";
+	}
   }
 }
 

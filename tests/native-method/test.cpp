@@ -41,7 +41,11 @@ void OnInit() {
   JS_Free(&obj);
 }
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_DefineNodeOnInitCallback(OnInit);
   JS_StartEngine("/");

@@ -137,13 +137,14 @@ var createBatch = function() {
   fs.writeFileSync('./temp/compile.bat', createScript());
 
   if (isWindows) {
+    var test_proj_folder = (platform == 'windows-uwp') ? 'test_app_uwp' : 'test_app'
     fs.writeFileSync('./temp/clean.bat', 'cd %1\ngit checkout -f');
     fs.writeFileSync('./temp/copy.bat',  ('del $TAPP*.lib \n'
                                        + 'del $TAPP*.dll \n'
                                        + 'copy $$TARGET\\$$MODE\\*.lib $TAPP\n'
                                        + 'copy $$TARGET\\$$MODE\\*.dll $TAPP\n')
                                        .replace(/\$\$MODE/g, release ? "Release" : "Debug")
-                                       .replace(/\$TAPP/g, path.join(__dirname, 'winproj\\test_app/'))
+                                       .replace(/\$TAPP/g, path.join(__dirname, 'winproj\\' + test_proj_folder + '/'))
                                        .replace(/\$\$TARGET/g, path.join(__dirname, forced_target)));
   } else {
     fs.writeFileSync('./temp/clean.bat', 'cd $1;git checkout -f');
@@ -162,6 +163,7 @@ var createBatch = function() {
   } else {
     fs.writeFileSync('./temp/test.bat', 'cd tests\nnode runtests.js --target=' + forced_target
                                       + ' --dest-cpu=' + (args.hasOwnProperty('--dest-cpu') ? args['--dest-cpu'] : 'ia32')
+                                      + ' --platform=' + (args.hasOwnProperty('--platform') ? args['--platform'] : 'desktop')
                                       + '\nexit %errorlevel%');
   }
 
@@ -223,34 +225,38 @@ var patch_nodejs = function() {
       process.exit(1);
     }
     if (isWindows) {
-      node_gyp = node_gyp.replace(/shared_library/g, 'loadable_module');
-      len_gyp = node_gyp.length;
-
-      // todo: make this regex
-      node_gyp = node_gyp.replace("[ 'node_shared==\"false\"', {",
-          "['node_shared==\"true\"',{'msvs_settings':"
-        + "{'VCCLCompilerTool':{'RuntimeLibrary': 3}}}],\n"
-        + "[ 'node_shared==\"false\"', {");
-
-      if (node_gyp.length == len_gyp) {
-        console.error('FATAL ERROR: could not patch node.gyp with MSVS settings');
-        process.exit(1);
+      if (platform != "windows-uwp") {
+        node_gyp = node_gyp.replace(/shared_library/g, 'loadable_module');
+        len_gyp = node_gyp.length;
+        
+        // todo: make this regex
+        node_gyp = node_gyp.replace("[ 'node_shared==\"false\"', {",
+            "['node_shared==\"true\"',{'msvs_settings':"
+          + "{'VCCLCompilerTool':{'RuntimeLibrary': 3}}}],\n"
+          + "[ 'node_shared==\"false\"', {");
+        
+        if (node_gyp.length == len_gyp) {
+          console.error('FATAL ERROR: could not patch node.gyp with MSVS settings');
+          process.exit(1);
+        }
+        len_gyp = node_gyp.length;
+        
+        node_gyp = node_gyp.replace(/node_module_version!=\"\"/g,
+                    'node_module_version!="" and OS!="win"');
       }
-      len_gyp = node_gyp.length;
-
-      node_gyp = node_gyp.replace(/node_module_version!=\"\"/g,
-                  'node_module_version!="" and OS!="win"');
     }
 
     fs.writeFileSync('./nodejs/node.gyp', node_gyp);
   }
 
   if (isWindows) {
-    console.log("nodejs -> [ patching configure ]");
-    {
-      var node_configure = fs.readFileSync('./nodejs/configure') + "";
-      fs.writeFileSync('./nodejs/configure',
-          node_configure.replace('b(options.shared)',"'true'"));
+    if (platform != "windows-uwp") {
+      console.log("nodejs -> [ patching configure ]");
+      {
+        var node_configure = fs.readFileSync('./nodejs/configure') + "";
+        fs.writeFileSync('./nodejs/configure',
+            node_configure.replace('b(options.shared)',"'true'"));
+      }
     }
   }
 

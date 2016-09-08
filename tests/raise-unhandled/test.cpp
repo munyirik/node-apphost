@@ -18,7 +18,11 @@ void crashMe(JS_Value *_, int argc) {
 const char *contents = "if (process.natives.sampleMethod() != 5)\n"
                        "  process.natives.crashMe();\n";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("crashMe", crashMe);
   JS_SetProcessNative("sampleMethod", sampleMethod);

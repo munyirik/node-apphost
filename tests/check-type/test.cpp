@@ -34,7 +34,11 @@ const char *contents =
     "process.natives.sampleMethod(1, 4.5, true, 'test', {a:3}, bf, undefined, "
     "null, new Error('error!'), fnc);";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("sampleMethod", sampleMethod);
   JS_StartEngine("/"); // defaults to main.js
@@ -42,6 +46,4 @@ int main(int argc, char **args) {
   while (JS_LoopOnce() != 0) usleep(1);
 
   JS_StopEngine();
-
-  return 0;
 }

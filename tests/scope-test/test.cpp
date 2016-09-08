@@ -8,7 +8,11 @@
 
 const char *contents = "process.x = 123;";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_StartEngine("/"); // defaults to main.js
 

@@ -30,7 +30,11 @@ const char *contents =
     "  process.natives.crashMe();\n"
     "console.log('PASSED')";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("crashMe", crashMe);
   JS_SetProcessNative("sampleMethod", sampleMethod);

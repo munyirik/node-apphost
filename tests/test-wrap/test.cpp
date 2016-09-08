@@ -35,7 +35,11 @@ const char *contents =
     "if (process.natives.sampleMethod(testObject) !== 'x')\n"
     "  process.natives.sampleMethod();";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("sampleMethod", sampleMethod);
   JS_StartEngine("/"); // defaults to main.js

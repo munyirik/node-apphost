@@ -14,7 +14,11 @@ void sampleMethod(JS_Value *params, int argc) {
 
 const char* contents = "console.log('>>>', process.execPath)";
 
+#ifndef UWP_DLL
 int main(int argc, char **args) {
+#else
+void test() {
+#endif
   JS_DefineMainFile(contents);
   JS_SetProcessNative("sampleMethod", sampleMethod);
   JS_StartEngine("/"); // defaults to main.js
